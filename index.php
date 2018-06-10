@@ -9,8 +9,11 @@
 
 $imageSection = initializeImageArray();
 printImageArray($imageSection, "Original Block Image 0-255 (8bits)");
-$flifedImage = flifAgorithm($imageSection);
-printImageArray($flifedImage, "Flifed Block Image(median)");
+$predictedValues = predictedValues($imageSection);
+printImageArray($predictedValues, "Predicted Values");
+$flifedImage = flifAlgorithm($imageSection, $predictedValues);
+printImageArray($flifedImage, "Final Table");
+
 
 function initializeImageArray()
 {
@@ -98,14 +101,14 @@ function printImageArray($imageSection, $message)
     for ( $line = 0; $line <= 7; $line++ ) {
         echo "<div class='col-12 row text-center '>";
         for ( $col = 0; $col <= 6; $col++ ) {
-            echo "<div class='col-1 p-2 border'>" . $imageSection[$col][$line] . "</div>";
+            echo "<div class='col-1 p-2 border'" . " style='background-color: rgb(" . $imageSection[$col][$line] . "," . $imageSection[$col][$line] . "," . $imageSection[$col][$line] . ") ' > " . $imageSection[$col][$line] . "</div>";
         }
         echo "</div>";
     }
     echo "</div>";
 }
 
-function flifAgorithm($imageSection)
+function predictedValues($imageSection)
 {
     $flifedImage = initializeEmptyArray();
     for ( $line = 0; $line <= 7; $line++ ) {
@@ -117,7 +120,7 @@ function flifAgorithm($imageSection)
             } elseif ( $line === 0 ) { //firt column with rhe first celule
                 $flifedImage[$col][$line] = median($imageSection[$col][$line], $imageSection[$col - 1][$line], $imageSection[$col - 1][$line]);
             } else {
-                $flifedImage[$col][$line] = median($imageSection[$col][$line-1], $imageSection[$col - 1][$line], $imageSection[$col - 1][$line-1]);
+                $flifedImage[$col][$line] = median($imageSection[$col][$line - 1], $imageSection[$col - 1][$line], $imageSection[$col - 1][$line - 1]);
             }
         }
     }
@@ -130,8 +133,30 @@ function median($upNeighbor, $leftNeighbor, $upLeftNeighbor)
     $medArray[0] = $upNeighbor;
     $medArray[1] = $leftNeighbor;
     $medArray[2] = $upNeighbor + $leftNeighbor - $upLeftNeighbor;
-//    echo "<br>mediana($medArray[0] , $medArray[1] , $medArray[2] )";
+    //    echo "<br>mediana($medArray[0] , $medArray[1] , $medArray[2] )";
     sort($medArray);
 
     return $medArray[1];
+}
+
+function flifAlgorithm($imageSection, $predictedValues, $N = 16)
+{
+    $flifedImage = [];
+    for ( $line = 0; $line <= 7; $line++ ) {
+        for ( $col = 0; $col <= 6; $col++ ) {
+            $eij = $imageSection[$col][$line] - $predictedValues[$col][$line];
+            $delta = 2 * $eij / 16;
+            if($delta === 0 ){
+                $flifedImage[$col][$line] = 0;
+                continue;
+            }
+            $flifedImage[$col][$line] = sign($eij) * ( ceil( $eij/ $delta ) + 0.5 ) * $delta;
+        }
+    }
+
+    return $flifedImage;
+}
+
+function sign( $number ) {
+    return ( $number > 0 ) ? 1 : ( ( $number < 0 ) ? -1 : 0 );
 }
